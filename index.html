@@ -1,175 +1,274 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Content Gallery</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .header {
-            text-align: center;
-            color: white;
-            padding: 40px 20px;
-        }
-        .header h1 {
-            font-size: 3em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        }
-        .header p {
-            font-size: 1.2em;
-            opacity: 0.9;
-        }
-        .container { 
-            max-width: 1400px; 
-            margin: 0 auto; 
-        }
-        .posts-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); 
-            gap: 30px;
-            padding: 20px 0;
-        }
-        .post-card { 
-            background: white; 
-            border-radius: 16px; 
-            overflow: hidden; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            text-decoration: none; 
-            color: inherit; 
-            display: block; 
-            transition: all 0.3s ease;
-        }
-        .post-card:hover { 
-            transform: translateY(-10px); 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        }
-        .post-card img { 
-            width: 100%; 
-            height: 280px; 
-            object-fit: cover;
-            display: block;
-        }
-        .post-content { 
-            padding: 25px; 
-        }
-        .post-title { 
-            font-size: 1.3em; 
-            font-weight: bold; 
-            margin-bottom: 12px;
-            color: #333;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .post-excerpt { 
-            color: #666; 
-            line-height: 1.6;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .post-meta { 
-            margin-top: 15px; 
-            font-size: 0.9em; 
-            color: #999;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .platform-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: 600;
-        }
-        .loading {
-            text-align: center;
-            padding: 100px 20px;
-            color: white;
-            font-size: 1.5em;
-        }
-        .error {
-            text-align: center;
-            padding: 100px 20px;
-            color: white;
-            font-size: 1.2em;
-        }
-        @media (max-width: 768px) {
-            .posts-grid {
-                grid-template-columns: 1fr;
-            }
-            .header h1 {
-                font-size: 2em;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Content Gallery</title>
+
+  <style>
+    /* =========================
+       THEME VARIABLES
+       ========================= */
+    :root {
+      --primary: #a7589d;
+      --primary-glow: rgba(167, 88, 157, 0.6);
+      --primary-soft: rgba(167, 88, 157, 0.25);
+      --bg-dark: #0b0710;
+      --glass: rgba(255, 255, 255, 0.08);
+      --text-main: #f4edf6;
+      --text-muted: #cbb9d1;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, var(--primary-soft), transparent 60%),
+        linear-gradient(135deg, #120b18, var(--bg-dark));
+      color: var(--text-main);
+      padding: 30px 20px;
+      overflow-x: hidden;
+    }
+
+    /* =========================
+       HEADER
+       ========================= */
+    .header {
+      text-align: center;
+      padding: 60px 20px 40px;
+    }
+
+    .header h1 {
+      font-size: clamp(2.2rem, 4vw, 3.5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #fff;
+      text-shadow:
+        0 0 25px var(--primary-glow),
+        0 0 60px rgba(0, 0, 0, 0.6);
+    }
+
+    .header p {
+      margin-top: 12px;
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin-inline: auto;
+    }
+
+    /* =========================
+       CONTAINER
+       ========================= */
+    .container {
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+
+    /* =========================
+       GRID
+       ========================= */
+    .posts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 35px;
+      padding: 30px 0 60px;
+    }
+
+    /* =========================
+       POST CARD
+       ========================= */
+    .post-card {
+      position: relative;
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      border-radius: 22px;
+      overflow: hidden;
+      background: linear-gradient(
+        160deg,
+        rgba(255, 255, 255, 0.12),
+        rgba(255, 255, 255, 0.03)
+      );
+      backdrop-filter: blur(18px);
+      border: 1px solid var(--primary-soft);
+      box-shadow:
+        0 20px 45px rgba(0, 0, 0, 0.6),
+        0 0 30px transparent;
+      transition: all 0.45s ease;
+    }
+
+    .post-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        circle at top,
+        var(--primary-soft),
+        transparent 60%
+      );
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+
+    .post-card:hover {
+      transform: translateY(-14px) scale(1.03);
+      box-shadow:
+        0 35px 70px rgba(0, 0, 0, 0.8),
+        0 0 60px var(--primary-glow);
+    }
+
+    .post-card:hover::before {
+      opacity: 1;
+    }
+
+    /* =========================
+       IMAGE
+       ========================= */
+    .post-card img {
+      width: 100%;
+      height: 260px;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.6s ease;
+    }
+
+    .post-card:hover img {
+      transform: scale(1.08);
+    }
+
+    /* =========================
+       CONTENT
+       ========================= */
+    .post-content {
+      padding: 26px;
+    }
+
+    .post-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #ffffff;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .post-excerpt {
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: var(--text-muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* =========================
+       META
+       ========================= */
+    .post-meta {
+      margin-top: 18px;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #bfa7c7;
+    }
+
+    .platform-badge {
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-weight: 600;
+      color: #fff;
+      background:
+        linear-gradient(135deg, var(--primary), #7d3f78);
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    /* =========================
+       STATES
+       ========================= */
+    .loading,
+    .error {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 120px 20px;
+      font-size: 1.4rem;
+      color: var(--text-muted);
+    }
+
+    /* =========================
+       MOBILE
+       ========================= */
+    @media (max-width: 768px) {
+      .posts-grid {
+        gap: 26px;
+      }
+    }
+  </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🤖 AI Content Gallery</h1>
-            <p>Automatically generated content powered by AI</p>
-        </div>
-        <div class="posts-grid" id="posts">
-            <div class="loading">Loading posts...</div>
-        </div>
+  <div class="container">
+    <div class="header">
+      <h1>RA's AI Content Gallery</h1>
+      <p>Curated moments, generated intelligence, and beautifully wild ideas.</p>
     </div>
-    
-    <script>
-        async function loadPosts() {
-            try {
-                const response = await fetch('posts/posts.json');
-                const posts = await response.json();
-                
-                const grid = document.getElementById('posts');
-                
-                if (posts.length === 0) {
-                    grid.innerHTML = '<div class="loading">No posts yet. Check back soon!</div>';
-                    return;
-                }
-                
-                grid.innerHTML = '';
-                
-                // Show newest first
-                posts.reverse().forEach(post => {
-                    const card = document.createElement('a');
-                    card.href = `posts/${post.id}.html`;
-                    card.className = 'post-card';
-                    card.innerHTML = `
-                        <img src="${post.image}" alt="${post.title}" loading="lazy">
-                        <div class="post-content">
-                            <div class="post-title">${post.title}</div>
-                            <div class="post-excerpt">${post.excerpt}</div>
-                            <div class="post-meta">
-                                <span>${post.date}</span>
-                                <span class="platform-badge">${post.platform}</span>
-                            </div>
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                });
-            } catch (error) {
-                document.getElementById('posts').innerHTML = 
-                    '<div class="error">Error loading posts. Please try again later.</div>';
-                console.error('Error loading posts:', error);
-            }
+
+    <div class="posts-grid" id="posts">
+      <div class="loading">Loading posts…</div>
+    </div>
+  </div>
+
+  <script>
+    async function loadPosts() {
+      try {
+        const response = await fetch('posts/posts.json');
+        const posts = await response.json();
+
+        const grid = document.getElementById('posts');
+
+        if (!posts.length) {
+          grid.innerHTML = '<div class="loading">No posts yet. Check back soon.</div>';
+          return;
         }
 
-        loadPosts();
-        
-        // Auto-refresh every 5 minutes to show new posts
-        setInterval(loadPosts, 5 * 60 * 1000);
-    </script>
+        grid.innerHTML = '';
+
+        posts.reverse().forEach(post => {
+          const card = document.createElement('a');
+          card.href = `posts/${post.id}.html`;
+          card.className = 'post-card';
+          card.innerHTML = `
+            <img src="${post.image}" alt="${post.title}" loading="lazy">
+            <div class="post-content">
+              <div class="post-title">${post.title}</div>
+              <div class="post-excerpt">${post.excerpt}</div>
+              <div class="post-meta">
+                <span>${post.date}</span>
+                <span class="platform-badge">${post.platform}</span>
+              </div>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      } catch (error) {
+        document.getElementById('posts').innerHTML =
+          '<div class="error">Something went wrong while loading posts.</div>';
+        console.error(error);
+      }
+    }
+
+    loadPosts();
+    setInterval(loadPosts, 5 * 60 * 1000);
+  </script>
 </body>
 </html>
