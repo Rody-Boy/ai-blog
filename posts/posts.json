@@ -1,11 +1,12 @@
 [
   {
-    "id": 1770536995856,
+    "id": 1770559424942,
     "title": "just a sample text for image",
     "excerpt": "",
-    "image": "",
+    "image": "https://gen.pollinations.ai/image/%22A%20desolate%2C%20mist-shrouded%20valley%20at%20dusk%3A%20a%20solitary%20tree%20stands%20tall%2C%20its%20branches%20etched%20against%20a%20pale%20blue%20sky%2C%20while%20a%20distant%20lake's%20glassy%20surface%20reflects%20only%20darkness.%22?key=sk_TYTMFwwFn3GYGfPIvVADrjOuwgbaYllJ&model=flux&width=1080&height=1080&nologo=true",
+    "image_url": "https://gen.pollinations.ai/image/%22A%20desolate%2C%20mist-shrouded%20valley%20at%20dusk%3A%20a%20solitary%20tree%20stands%20tall%2C%20its%20branches%20etched%20against%20a%20pale%20blue%20sky%2C%20while%20a%20distant%20lake's%20glassy%20surface%20reflects%20only%20darkness.%22?key=sk_TYTMFwwFn3GYGfPIvVADrjOuwgbaYllJ&model=flux&width=1080&height=1080&nologo=true",
     "date": "2026-02-08",
-    "slug": "post-1770536995856.html",
-    "url": "posts/post-1770536995856.html"
+    "slug": "post-1770559424942.html",
+    "url": "posts/post-1770559424942.html"
   }
 ]
