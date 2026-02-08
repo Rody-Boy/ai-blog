@@ -246,7 +246,7 @@
 
         posts.reverse().forEach(post => {
           const card = document.createElement('a');
-          card.href = `posts/${post.url}.html`;
+          card.href = post.url;
           card.className = 'post-card';
           card.innerHTML = `
             <img src="${post.image_url}" alt="${post.title}" loading="lazy">
