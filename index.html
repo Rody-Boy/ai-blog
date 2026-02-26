@@ -230,10 +230,30 @@
   </div>
 
   <script>
+    function normalizePost(post) {
+      return {
+        title: post.title || 'Untitled Post',
+        excerpt: post.excerpt || 'No excerpt available yet.',
+        image: post.image_url || post.image || 'https://placehold.co/1080x1080?text=No+Image',
+        url: post.url || `posts/${post.slug || ('post-' + post.id)}.html`,
+        date: post.date || (post.id ? new Date(post.id).toISOString().slice(0, 10) : 'Unknown date'),
+        platform: post.platform || 'AI Post',
+        sortValue: post.id || Date.parse(post.date || '') || 0
+      };
+    }
+
+    function parsePostsPayload(rawPosts) {
+      if (Array.isArray(rawPosts)) return rawPosts;
+      if (rawPosts && Array.isArray(rawPosts.posts)) return rawPosts.posts;
+      if (rawPosts && typeof rawPosts === 'object') return [rawPosts];
+      return [];
+    }
+
     async function loadPosts() {
       try {
-        const response = await fetch('posts/posts.json');
-        const posts = await response.json();
+        const response = await fetch(`posts/posts.json?ts=${Date.now()}`, { cache: 'no-store' });
+        const rawPosts = await response.json();
+        const posts = parsePostsPayload(rawPosts).map(normalizePost);
 
         const grid = document.getElementById('posts');
 
@@ -242,14 +262,11 @@
           return;
         }
 
-        grid.innerHTML = '';
+        const orderedPosts = posts.sort((a, b) => b.sortValue - a.sortValue);
 
-        posts.reverse().forEach(post => {
-          const card = document.createElement('a');
-          card.href = post.url;
-          card.className = 'post-card';
-          card.innerHTML = `
-            <img src="${post.image_url}" alt="${post.title}" loading="lazy">
+        grid.innerHTML = orderedPosts.map(post => `
+          <a href="${post.url}" class="post-card">
+            <img src="${post.image}" alt="${post.title}" loading="lazy">
             <div class="post-content">
               <div class="post-title">${post.title}</div>
               <div class="post-excerpt">${post.excerpt}</div>
@@ -258,9 +275,8 @@
                 <span class="platform-badge">${post.platform}</span>
               </div>
             </div>
-          `;
-          grid.appendChild(card);
-        });
+          </a>
+        `).join('');
       } catch (error) {
         document.getElementById('posts').innerHTML =
           '<div class="error">Something went wrong while loading posts.</div>';
