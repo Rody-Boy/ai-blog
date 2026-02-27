@@ -17,6 +17,21 @@
       --surface: rgba(255, 255, 255, 0.08);
       --surface-strong: rgba(255, 255, 255, 0.12);
       --border-soft: rgba(167, 88, 157, 0.25);
+      --success: #75d1b0;
+    }
+
+    body[data-theme='light'] {
+      --primary: #9f4e96;
+      --primary-glow: rgba(159, 78, 150, 0.45);
+      --primary-soft: rgba(159, 78, 150, 0.18);
+      --bg-dark: #f5f0f7;
+      --bg-dark-soft: #efe4f1;
+      --text-main: #2b1830;
+      --text-muted: #6f5c73;
+      --surface: rgba(255, 255, 255, 0.75);
+      --surface-strong: rgba(255, 255, 255, 0.9);
+      --border-soft: rgba(159, 78, 150, 0.22);
+      --success: #2b9e79;
     }
 
     body[data-theme='light'] {
@@ -56,7 +71,8 @@
     .header p { margin-top: 12px; font-size: 1.05rem; color: var(--text-muted); max-width: 660px; margin-inline: auto; }
 
     .status-bar,
-    .controls {
+    .controls,
+    .modal-card {
       border-radius: 14px;
       background: linear-gradient(160deg, var(--surface-strong), var(--surface));
       border: 1px solid var(--border-soft);
@@ -182,12 +198,7 @@
     .post-meta { margin-top: auto; padding-top: 14px; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); gap: 8px; }
     .platform-badge { padding: 6px 12px; border-radius: 999px; font-weight: 600; color: #fff; background: linear-gradient(135deg, var(--primary), #7d3f78); box-shadow: 0 0 12px var(--primary-glow); max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .post-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
+    .post-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
     .action-btn {
       border: 1px solid var(--border-soft);
       background: rgba(255,255,255,0.06);
@@ -196,6 +207,11 @@
       padding: 6px 10px;
       font-size: 0.78rem;
       cursor: pointer;
+    }
+
+    .fav-on {
+      color: var(--success);
+      border-color: color-mix(in srgb, var(--success) 55%, transparent);
     }
 
     .load-more-wrap { display: flex; justify-content: center; padding: 18px 0 30px; }
@@ -216,6 +232,78 @@
       font-size: 1.1rem;
       color: var(--text-muted);
     }
+
+    .clear-filters-btn {
+      margin-top: 12px;
+      border: 1px solid var(--border-soft);
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text-main);
+      border-radius: 10px;
+      padding: 8px 14px;
+      cursor: pointer;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+
+    .modal.open { display: flex; }
+
+    .modal-card {
+      width: min(900px, 100%);
+      max-height: 90vh;
+      overflow: auto;
+      padding: 14px;
+    }
+
+    .modal-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .modal-close {
+      border: 1px solid var(--border-soft);
+      background: rgba(255,255,255,0.08);
+      color: var(--text-main);
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+
+    .modal-img {
+      width: 100%;
+      max-height: 420px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.85rem;
+      color: #fff;
+      background: rgba(20, 20, 24, 0.85);
+      border: 1px solid var(--border-soft);
+      display: none;
+      z-index: 60;
+    }
+
+    .toast.show { display: block; }
 
     @media (max-width: 940px) {
       .controls { grid-template-columns: 1fr; }
@@ -264,6 +352,22 @@
     </div>
   </div>
 
+  <div id="preview-modal" class="modal" aria-hidden="true" role="dialog" aria-label="Post preview">
+    <div class="modal-card">
+      <div class="modal-top">
+        <strong id="modal-title"></strong>
+        <button id="modal-close" class="modal-close" type="button">Close</button>
+      </div>
+      <img id="modal-img" class="modal-img" alt="Post image preview" />
+      <p id="modal-excerpt"></p>
+      <div class="post-actions" style="margin-top:14px;">
+        <a id="modal-open-link" class="action-btn" href="#">Open full post</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
   <script>
     const state = {
       allPosts: [],
@@ -272,11 +376,13 @@
       visibleCount: 12,
       query: '',
       platform: 'All',
-      sort: 'newest'
+      sort: 'newest',
+      favorites: new Set(JSON.parse(localStorage.getItem('favorites') || '[]'))
     };
 
     function normalizePost(post) {
       return {
+        id: post.id || post.slug || post.url || Math.random().toString(36).slice(2),
         title: post.title || 'Untitled Post',
         excerpt: post.excerpt || 'No excerpt available yet.',
         image: post.image_url || post.image || 'https://placehold.co/1080x1080?text=No+Image',
@@ -294,6 +400,13 @@
       return [];
     }
 
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1400);
+    }
+
     function updateStatus(totalShown, totalFiltered) {
       document.getElementById('posts-count').textContent = `${totalShown} shown · ${totalFiltered} matched`;
       document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleString()}`;
@@ -301,7 +414,7 @@
 
     function renderPlatformChips(posts) {
       const chipsRoot = document.getElementById('chips');
-      const platforms = ['All', ...new Set(posts.map(p => p.platform).filter(Boolean))];
+      const platforms = ['All', 'Favorites', ...new Set(posts.map(p => p.platform).filter(Boolean))];
       chipsRoot.innerHTML = platforms.map(platform => `
         <button type="button" class="chip ${platform === state.platform ? 'active' : ''}" data-platform="${platform}">${platform}</button>
       `).join('');
@@ -312,6 +425,7 @@
           state.visibleCount = state.pageSize;
           renderPlatformChips(state.allPosts);
           applyFiltersAndRender();
+          syncUrl();
         });
       });
     }
@@ -335,7 +449,7 @@
     }
 
     function copyLink(url) {
-      navigator.clipboard.writeText(url).catch(() => {});
+      navigator.clipboard.writeText(url).then(() => showToast('Link copied')).catch(() => showToast('Copy failed'));
     }
 
     function sharePost(title, url) {
@@ -346,6 +460,31 @@
       }
     }
 
+    function toggleFavorite(postId) {
+      const key = String(postId);
+      if (state.favorites.has(key)) state.favorites.delete(key);
+      else state.favorites.add(key);
+      localStorage.setItem('favorites', JSON.stringify([...state.favorites]));
+      applyFiltersAndRender();
+      showToast(state.favorites.has(key) ? 'Added to favorites' : 'Removed from favorites');
+    }
+
+    function openModal(post) {
+      const modal = document.getElementById('preview-modal');
+      document.getElementById('modal-title').textContent = post.title;
+      document.getElementById('modal-img').src = post.image;
+      document.getElementById('modal-excerpt').textContent = post.excerpt;
+      document.getElementById('modal-open-link').href = post.url;
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('preview-modal');
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
     function renderGrid() {
       const grid = document.getElementById('posts');
       const loadMoreBtn = document.getElementById('load-more-btn');
@@ -353,32 +492,60 @@
       const visible = state.filteredPosts.slice(0, state.visibleCount);
 
       if (!state.filteredPosts.length) {
-        grid.innerHTML = '<div class="empty">No posts match your current search/filter.</div>';
+        grid.innerHTML = `
+          <div class="empty">
+            No posts match your current search/filter.
+            <div><button id="clear-filters-btn" class="clear-filters-btn" type="button">Clear filters</button></div>
+          </div>
+        `;
         loadMoreBtn.hidden = true;
         updateStatus(0, 0);
+
+        const clearBtn = document.getElementById('clear-filters-btn');
+        clearBtn?.addEventListener('click', () => {
+          state.query = '';
+          state.platform = 'All';
+          state.sort = 'newest';
+          state.visibleCount = state.pageSize;
+          document.getElementById('search-input').value = '';
+          document.getElementById('sort-select').value = 'newest';
+          renderPlatformChips(state.allPosts);
+          applyFiltersAndRender();
+          syncUrl();
+        });
         return;
       }
 
-      grid.innerHTML = visible.map(post => `
-        <article class="post-card-wrap">
-          <a href="${escapeHtml(post.url)}" class="post-card" aria-label="Open post: ${escapeHtml(post.title)}">
-            <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" loading="lazy" onerror="this.src='https://placehold.co/1080x1080?text=Image+Unavailable'">
-            <div class="post-content">
-              <div class="post-title">${escapeHtml(post.title)}</div>
-              <div class="post-excerpt">${escapeHtml(post.excerpt)}</div>
-              <div class="post-meta">
-                <span>${escapeHtml(post.date)}</span>
-                <span class="platform-badge">${escapeHtml(post.platform)}</span>
+      grid.innerHTML = visible.map((post, i) => {
+        const idKey = String(post.id);
+        const isFav = state.favorites.has(idKey);
+        const index = i;
+        return `
+          <article class="post-card-wrap">
+            <a href="${escapeHtml(post.url)}" class="post-card" aria-label="Open post: ${escapeHtml(post.title)}">
+              <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" loading="lazy" onerror="this.src='https://placehold.co/1080x1080?text=Image+Unavailable'">
+              <div class="post-content">
+                <div class="post-title">${escapeHtml(post.title)}</div>
+                <div class="post-excerpt">${escapeHtml(post.excerpt)}</div>
+                <div class="post-meta">
+                  <span>${escapeHtml(post.date)}</span>
+                  <span class="platform-badge">${escapeHtml(post.platform)}</span>
+                </div>
               </div>
-              <div class="post-cta">Read post →</div>
+            </a>
+            <div class="post-actions">
+              <button type="button" class="action-btn ${isFav ? 'fav-on' : ''}" data-fav="${escapeHtml(idKey)}">${isFav ? '★ Saved' : '☆ Save'}</button>
+              <button type="button" class="action-btn" data-copy="${escapeHtml(post.url)}">Copy</button>
+              <button type="button" class="action-btn" data-share-title="${escapeHtml(post.title)}" data-share-url="${escapeHtml(post.url)}">Share</button>
+              <button type="button" class="action-btn" data-preview-index="${index}">Preview</button>
             </div>
-          </a>
-          <div class="post-actions">
-            <button type="button" class="action-btn" data-copy="${escapeHtml(post.url)}">Copy link</button>
-            <button type="button" class="action-btn" data-share-title="${escapeHtml(post.title)}" data-share-url="${escapeHtml(post.url)}">Share</button>
-          </div>
-        </article>
-      `).join('');
+          </article>
+        `;
+      }).join('');
+
+      grid.querySelectorAll('[data-fav]').forEach(btn => {
+        btn.addEventListener('click', () => toggleFavorite(btn.dataset.fav));
+      });
 
       grid.querySelectorAll('[data-copy]').forEach(btn => {
         btn.addEventListener('click', () => copyLink(btn.dataset.copy));
@@ -388,6 +555,13 @@
         btn.addEventListener('click', () => sharePost(btn.dataset.shareTitle, btn.dataset.shareUrl));
       });
 
+      grid.querySelectorAll('[data-preview-index]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const post = visible[Number(btn.dataset.previewIndex)];
+          if (post) openModal(post);
+        });
+      });
+
       loadMoreBtn.hidden = state.visibleCount >= state.filteredPosts.length;
       updateStatus(visible.length, state.filteredPosts.length);
     }
@@ -395,12 +569,34 @@
     function applyFiltersAndRender() {
       const query = state.query.toLowerCase().trim();
       const filtered = state.allPosts.filter(post => {
-        const byPlatform = state.platform === 'All' || post.platform === state.platform;
+        const byPlatform =
+          state.platform === 'All' ||
+          (state.platform === 'Favorites' && state.favorites.has(String(post.id))) ||
+          post.platform === state.platform;
         const byQuery = !query || `${post.title} ${post.excerpt}`.toLowerCase().includes(query);
         return byPlatform && byQuery;
       });
       state.filteredPosts = getSortedPosts(filtered);
       renderGrid();
+    }
+
+    function syncUrl() {
+      const params = new URLSearchParams();
+      if (state.query) params.set('q', state.query);
+      if (state.platform !== 'All') params.set('platform', state.platform);
+      if (state.sort !== 'newest') params.set('sort', state.sort);
+      const query = params.toString();
+      const newUrl = query ? `${location.pathname}?${query}` : location.pathname;
+      history.replaceState(null, '', newUrl);
+    }
+
+    function hydrateStateFromUrl() {
+      const params = new URLSearchParams(location.search);
+      state.query = params.get('q') || '';
+      state.platform = params.get('platform') || 'All';
+      state.sort = params.get('sort') || 'newest';
+      document.getElementById('search-input').value = state.query;
+      document.getElementById('sort-select').value = state.sort;
     }
 
     async function loadPosts() {
@@ -429,12 +625,14 @@
         state.query = e.target.value;
         state.visibleCount = state.pageSize;
         applyFiltersAndRender();
+        syncUrl();
       });
 
       document.getElementById('sort-select').addEventListener('change', (e) => {
         state.sort = e.target.value;
         state.visibleCount = state.pageSize;
         applyFiltersAndRender();
+        syncUrl();
       });
 
       document.getElementById('load-more-btn').addEventListener('click', () => {
@@ -447,11 +645,27 @@
         const current = document.body.getAttribute('data-theme') || 'dark';
         setTheme(current === 'dark' ? 'light' : 'dark');
       });
+
+      document.getElementById('modal-close').addEventListener('click', closeModal);
+      document.getElementById('preview-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'preview-modal') closeModal();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === '/') {
+          e.preventDefault();
+          document.getElementById('search-input').focus();
+        }
+        if (e.key === 'Escape') {
+          closeModal();
+        }
+      });
     }
 
     const savedTheme = localStorage.getItem('theme') || 'dark';
     setTheme(savedTheme);
     setupControls();
+    hydrateStateFromUrl();
     loadPosts();
     setInterval(loadPosts, 5 * 60 * 1000);
   </script>
